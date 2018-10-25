@@ -16,7 +16,7 @@
         {
           "settings": {
             "method": "GET",
-            "path": "/pets/:petId"
+            "path": "/pets"
           },
           "action": {
             "id": "pets"
@@ -86,7 +86,7 @@
                 },
                 {
                   "name": "sub",
-                  "value": null,
+                  "value": "tempuser@mail.com",
                   "required": false,
                   "type": "string"
                 },
@@ -100,13 +100,84 @@
               "inputMappings": [
                 {
                   "type": 1,
-                  "value": "{T.header.Authorization}",
+                  "value": "{T.header}",
                   "mapTo": "token"
                 }
               ]
             },
             {
-              "id": "reply_5",
+              "id": "rest_2",
+              "name": "Invoke REST Service",
+              "description": "Simple REST Activity",
+              "type": 1,
+              "activityType": "github-com-mashling-flogoactivity",
+              "activityRef": "github.com/mashling/httpactivity",
+              "attributes": [
+                {
+                  "name": "serviceName",
+                  "value": "reset",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "method",
+                  "value": "GET",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "url",
+                  "value": "http://petstore.swagger.io/v2/pet/:petId",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "path",
+                  "value": null,
+                  "required": false,
+                  "type": "string"
+                },
+                {
+                  "name": "pathParams",
+                  "value": null,
+                  "required": false,
+                  "type": "any"
+                },
+                {
+                  "name": "body",
+                  "value": null,
+                  "required": false,
+                  "type": "string"
+                },
+                {
+                  "name": "headers",
+                  "value": null,
+                  "required": false,
+                  "type": "any"
+                },
+                {
+                  "name": "query",
+                  "value": null,
+                  "required": false,
+                  "type": "any"
+                },
+                {
+                  "name": "timeout",
+                  "value": null,
+                  "required": false,
+                  "type": "integer"
+                }
+              ],
+              "inputMappings": [
+                {
+                  "type": 1,
+                  "value": "$activity[JWTservice].token.Claims.id",
+                  "mapTo": "pathParams"
+                }
+              ]
+            },
+            {
+              "id": "reply_success",
               "name": "Reply (Legacy)",
               "description": "Simple Reply Activity",
               "type": 1,
@@ -130,12 +201,48 @@
                 "mappings": [
                   {
                     "type": 1,
-                    "value": "$activity[JWTservice].statusCode",
+                    "value": "$activity[rest_2].statusCode",
                     "mapTo": "code"
                   },
                   {
                     "type": 1,
-                    "value": "$activity[JWTservice].body",
+                    "value": "$activity[rest_2].body",
+                    "mapTo": "data"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "reply_failure",
+              "name": "Reply (Legacy)",
+              "description": "Simple Reply Activity",
+              "type": 1,
+              "activityType": "tibco-reply",
+              "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/actreply",
+              "attributes": [
+                {
+                  "name": "statusCode",
+                  "value": 0,
+                  "required": true,
+                  "type": "integer"
+                },
+                {
+                  "name": "body",
+                  "value": null,
+                  "required": false,
+                  "type": "any"
+                }
+              ],
+              "input": {
+                "mappings": [
+                  {
+                    "type": 2,
+                    "value": 401,
+                    "mapTo": "code"
+                  },
+                  {
+                    "type": 1,
+                    "value": "$activity[JWTservice].error",
                     "mapTo": "data"
                   }
                 ]
@@ -146,7 +253,21 @@
             {
               "id": 1,
               "from": "JWTservice",
-              "to": "reply_5",
+              "to": "rest_2",
+              "type": 1,
+              "value": "$activity[JWTservice].valid == true"
+            },
+            {
+              "id": 2,
+              "from": "JWTservice",
+              "to": "reply_failure",
+              "type": 1,
+              "value": "$activity[JWTservice].valid == false"
+            },
+            {
+              "id": 3,
+              "from": "rest_2",
+              "to": "reply_success",
               "type": 0
             }
           ],

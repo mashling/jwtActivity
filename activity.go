@@ -124,16 +124,24 @@ func (f *Factory) Make(name string, settings map[string]interface{}) (registry.S
 	request := JWTRequest{}
 	jwtService.Request = request
 	err := jwtService.setRequestValues(settings)
+	if err != nil {
+		fmt.Println("error in updaterequest")
+	}
 	return jwtService, err
 }
 
 // Execute invokes this JWT service.
 func (j *JWT) Execute() error {
 	j.Response = JWTResponse{}
+	fmt.Println("Before passing to execute")
+	fmt.Println("Signing Method", j.Request.SigningMethod)
+	fmt.Println("Token being passed:", j.Request.Token)
+
 	token, err := jwt.Parse(j.Request.Token, func(token *jwt.Token) (interface{}, error) {
 		// Make sure signing alg matches what we expect
 		switch strings.ToLower(j.Request.SigningMethod) {
 		case "hmac":
+			fmt.Println("in hmac")
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			}
@@ -156,22 +164,27 @@ func (j *JWT) Execute() error {
 		}
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			if j.Request.Issuer != "" && !claims.VerifyIssuer(j.Request.Issuer, true) {
+				fmt.Println("In Issuer")
 				return nil, jwt.NewValidationError("iss claims do not match", jwt.ValidationErrorIssuer)
 			}
 			if j.Request.Audience != "" && !claims.VerifyAudience(j.Request.Audience, true) {
+				fmt.Println("In Audience")
 				return nil, jwt.NewValidationError("aud claims do not match", jwt.ValidationErrorAudience)
 			}
 			subClaim, sok := claims["sub"].(string)
 			if j.Request.Subject != "" && (!sok || strings.Compare(j.Request.Subject, subClaim) != 0) {
+				fmt.Println("In subject")
 				return nil, jwt.NewValidationError("sub claims do not match", jwt.ValidationErrorClaimsInvalid)
 			}
 		} else {
+			fmt.Println("in claims error")
 			return nil, jwt.NewValidationError("unable to parse claims", jwt.ValidationErrorClaimsInvalid)
 		}
 
 		return []byte(j.Request.Key), nil
 	})
 	if token != nil && token.Valid {
+		fmt.Println("valid token")
 		j.Response.Valid = true
 		j.Response.Token = ParsedToken{Signature: token.Signature, SigningMethod: token.Method.Alg(), Header: token.Header}
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
@@ -179,9 +192,11 @@ func (j *JWT) Execute() error {
 		}
 		return err
 	} else if ve, ok := err.(*jwt.ValidationError); ok {
+		fmt.Println("invalid token")
 		j.Response.Valid = false
 		j.Response.ValidationMessage = ve.Error()
 	} else {
+		fmt.Println("errror in token")
 		j.Response.Valid = false
 		j.Response.Error = true
 		j.Response.ValidationMessage = err.Error()
@@ -207,8 +222,13 @@ func (j *JWT) setRequestValues(settings map[string]interface{}) error {
 				return errors.New("invalid type for token")
 			}
 			// Try to scrub any extra noise from the token string
+			fmt.Println("original token", token)
 			tokenSplit := strings.Fields(token)
-			token = tokenSplit[len(tokenSplit)-1]
+			fmt.Println("tokenSplit", tokenSplit)
+			tokenSplit = strings.Split(tokenSplit[len(tokenSplit)-1],",")
+			token = tokenSplit[0]
+			token = token[:len(token)-1]
+			fmt.Println("Assigned token", token)
 			j.Request.Token = token
 		case "key":
 			key, ok := v.(string)

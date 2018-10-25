@@ -1,0 +1,195 @@
+{
+  "name": "JWTActivityGateway",
+  "type": "flogo:app",
+  "version": "1.0.0",
+  "description": "This is a simple proxy.",
+  "triggers": [
+    {
+      "name": "validate JWT",
+      "id": "JWT",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
+      "description": "Simple REST Trigger",
+      "settings": {
+        "port": "9096"
+      },
+      "handlers": [
+        {
+          "settings": {
+            "method": "GET",
+            "path": "/pets/:petId"
+          },
+          "action": {
+            "id": "pets"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "pets",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+      "data": {
+        "flowURI": "res://flow:pets"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "id": "flow:pets",
+      "compressed": false,
+      "data": {
+        "name": "flow",
+        "type": 1,
+        "attributes": [],
+        "rootTask": {
+          "id": "root",
+          "type": 1,
+          "tasks": [
+            {
+              "id": "JWTservice",
+              "name": "Invoke JWT Service",
+              "description": "check for validity of token",
+              "type": 1,
+              "activityType": "github-com-mashling-flogoactivity",
+              "activityRef": "github.com/mashling/jwtActivity",
+              "attributes": [
+                {
+                  "name": "serviceName",
+                  "value": "jwtService",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "token",
+                  "value": null,
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "key",
+                  "value": "qwertyuiopasdfghjklzxcvbnm789101",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "signingMethod",
+                  "value": "HMAC",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "iss",
+                  "value": "Mashling",
+                  "required": true,
+                  "type": "any"
+                },
+                {
+                  "name": "sub",
+                  "value": null,
+                  "required": false,
+                  "type": "string"
+                },
+                {
+                  "name": "aud",
+                  "value": "www.mashling.io",
+                  "required": true,
+                  "type": "string"
+                }
+              ],
+              "inputMappings": [
+                {
+                  "type": 1,
+                  "value": "{T.header.Authorization}",
+                  "mapTo": "token"
+                }
+              ]
+            },
+            {
+              "id": "reply_5",
+              "name": "Reply (Legacy)",
+              "description": "Simple Reply Activity",
+              "type": 1,
+              "activityType": "tibco-reply",
+              "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/actreply",
+              "attributes": [
+                {
+                  "name": "statusCode",
+                  "value": 0,
+                  "required": true,
+                  "type": "integer"
+                },
+                {
+                  "name": "body",
+                  "value": null,
+                  "required": false,
+                  "type": "any"
+                }
+              ],
+              "input": {
+                "mappings": [
+                  {
+                    "type": 1,
+                    "value": "$activity[JWTservice].statusCode",
+                    "mapTo": "code"
+                  },
+                  {
+                    "type": 1,
+                    "value": "$activity[JWTservice].body",
+                    "mapTo": "data"
+                  }
+                ]
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": 1,
+              "from": "JWTservice",
+              "to": "reply_5",
+              "type": 0
+            }
+          ],
+          "attributes": []
+        },
+        "explicitReply": true,
+        "errorHandlerTask": {
+          "id": 7,
+          "type": 1,
+          "tasks": [
+            {
+              "id": "log_8",
+              "name": "Log Message (5)",
+              "description": "Simple Log Activity",
+              "type": 1,
+              "activityType": "tibco-log",
+              "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "attributes": [
+                {
+                  "name": "message",
+                  "value": "Error Processing request in gateway",
+                  "required": false,
+                  "type": "string"
+                },
+                {
+                  "name": "flowInfo",
+                  "value": "true",
+                  "required": false,
+                  "type": "boolean"
+                },
+                {
+                  "name": "addToFlow",
+                  "value": "true",
+                  "required": false,
+                  "type": "boolean"
+                }
+              ]
+            }
+          ],
+          "links": [],
+          "attributes": []
+        }
+      }
+    }
+  ]
+}

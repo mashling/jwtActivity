@@ -1,0 +1,67 @@
+{
+  "name": "tibco-jwtactivity",
+  "type": "flogo:activity",
+  "ref": "github.com/mashling/jwtActivity",
+  "version": "0.0.1",
+  "title": "Invoke an JWT Activity",
+  "description": "JWT token validation to the HTTP service",
+  "homepage": "https://github.com/TIBCOSoftware/pointlander/jwtActivity",
+  "input":[
+    {
+      "name": "serviceName",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "token",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "key",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "signingMethod",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "iss",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "sub",
+      "type": "string"
+    },
+    {
+      "name": "aud",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "output": [
+    {
+      "name": "valid",
+      "type": "boolean"
+    },
+    {
+      "name": "validationMessage",
+      "type": "string"
+    },
+    {
+      "name": "error",
+      "type": "boolean"
+    },
+    {
+      "name": "errorMessage",
+      "type": "string"
+    },
+    {
+      "name": "token",
+      "type": "any"
+    }
+  ]
+}
